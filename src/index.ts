@@ -1,20 +1,42 @@
-// src/index.ts
-
-import express from 'express';
+import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
-import userRoutes from './routes/userRoutes';
 
 dotenv.config();
 
 const app = express();
+const router = express.Router();
 const prisma = new PrismaClient();
 
 app.use(express.json());
-app.use('/users', userRoutes(prisma)); // Menggunakan router untuk user
+app.use(express.urlencoded({ extended: true }));
 
-// Menjalankan server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+
+app.get('/', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.post('/', async (req, res) => {
+  const { name, email } = req.body;
+  try {
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+      },
+    });
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+app.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
 });
